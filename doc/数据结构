@@ -1,0 +1,9 @@
+struct customer
+{
+	account a;
+};
+
+struct merchant
+{
+};
+
