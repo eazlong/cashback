@@ -28,7 +28,7 @@ void processer_test::test_register_process()
 
 void processer_test::test_generate_request_process()
 {
-	callback_generate_request_codec cc;
+	cashback_generate_request_codec cc;
 	generate_request_processer p(&cc);
 	std::string ret;
 	CPPUNIT_ASSERT( INVALID_PRAMETER == p.process( "", ret) );

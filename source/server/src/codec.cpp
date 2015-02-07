@@ -52,7 +52,7 @@ std::string user_info_codec::encode( void* data )
 	return ss.str();
 }
 
-void* callback_generate_request_codec::decode( const std::string& message )
+void* cashback_generate_request_codec::decode( const std::string& message )
 {
 	if ( message.empty() )
 		return NULL;
@@ -97,7 +97,7 @@ void* callback_generate_request_codec::decode( const std::string& message )
 	return gen;
 }
 
-std::string callback_generate_request_codec::encode( void* data )
+std::string cashback_generate_request_codec::encode( void* data )
 {
 	assert( data != NULL );
 
@@ -108,7 +108,7 @@ std::string callback_generate_request_codec::encode( void* data )
 }
 
 
-void* callback_confirm_request_codec::decode( const std::string& message )
+void* cashback_confirm_request_codec::decode( const std::string& message )
 {
 	if ( message.empty() )
 		return NULL;
@@ -155,16 +155,66 @@ void* callback_confirm_request_codec::decode( const std::string& message )
 			{
 				gen->merchant_name = val;
 			}
+			else if ( key== "customer" )
+			{
+				gen->customer_name = val;
+			}
 		}
 	}
 
 	return gen;
 }
 
-std::string callback_confirm_request_codec::encode( void* data )
+std::string cashback_confirm_request_codec::encode( void* data )
 {
 	assert( data != NULL );
 	std::ostringstream ss;
 	ss << "balance:" << *(float*)data;
+	return ss.str();
+}
+
+void* get_requesting_trade_codec::decode( const std::string& message )
+{
+	if ( message.empty() )
+		return NULL;
+
+	std::stringstream ss( message );
+	std::string temp;
+	get_reqeusting_trade_request* reqesting = new get_reqeusting_trade_request();
+	while ( getline( ss, temp ) )
+	{
+		if ( !temp.empty() )
+		{
+			size_t s = temp.find(":");
+			std::string& key = temp.substr( 0, s );
+			std::string& val = temp.substr( s+1 );
+			if ( key == "user_name" )
+			{
+				reqesting->base.name = val;
+			}
+			else if ( key == "type" )
+			{
+				reqesting->base.type = (user_type)atoi(val.c_str());
+			}
+			else if ( key == "token" )
+			{
+				reqesting->base.token = atoi(val.c_str());
+			}
+			else if ( key == "clerk" )
+			{
+				reqesting->clerk = val;
+			}
+		}
+	}
+	return reqesting;
+}
+
+std::string get_requesting_trade_codec::encode( void* data )
+{
+	assert( data != NULL );
+
+	trade* ack = (trade*)data;
+	std::ostringstream ss;
+	ss << "cash:" << ack->cash << "\ncashback:" << ack->cashback << "\ncustomer:" << ack->name;
 	return ss.str();
 }

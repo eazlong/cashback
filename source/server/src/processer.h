@@ -64,6 +64,7 @@ protected:
 	virtual int process_data( void* data, std::string& ret_msg );
 };
 
+//商家生成优惠券后，用户扫描二维码发送确认信息
 class cashback_customer_confirm_processer : public processer
 {
 public:
@@ -80,6 +81,29 @@ class cashback_merchant_confirm_processer : public processer
 {
 public:
 	cashback_merchant_confirm_processer( codec* c )
+		:processer( c )
+	{
+	}
+protected:
+	virtual int process_data( void* data, std::string& ret_msg );
+};
+
+//店员刷新其需要确认的交易信息
+class get_reqesting_trade_processer: public processer
+{
+public:
+	get_reqesting_trade_processer( codec* c )
+		:processer( c )
+	{
+	}
+protected:
+	virtual int process_data( void* data, std::string& ret_msg );
+};
+
+class refresh_processer: public processer
+{
+public:
+	refresh_processer( codec* c )
 		:processer( c )
 	{
 	}

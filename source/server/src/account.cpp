@@ -29,3 +29,8 @@ float base_account::sub( float cash )
 	m_balance -= cash;
 	return m_balance;
 }
+
+float base_account::get_balance() const
+{
+	return m_balance;
+}

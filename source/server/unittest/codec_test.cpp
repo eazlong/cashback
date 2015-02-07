@@ -29,7 +29,7 @@ void codec_test::test_regester_codec()
 
 void codec_test::test_generate_request_codec()
 {
-	callback_generate_request_codec gc;
+	cashback_generate_request_codec gc;
 	void* d = gc.decode("");
 	CPPUNIT_ASSERT( NULL == d );
 	std::string msg = "user_name:wangwu\ntype:1\ntoken:10000\ncash:100.00\nclerk:xiaoming";

@@ -63,11 +63,11 @@ public:
 		return ( --m_login_count == 0 );
 	}
 
-	int get_cashback( float cash, std::string& clerk, unsigned long& bussiness_token, float& cashback );
-	int request_cashback( float cash, std::string& clerk, std::string& request_customer );
+	int get_cashback( float cash, const std::string& clerk, unsigned long& bussiness_token, float& cashback );
+	int request_cashback( float cash, const std::string& clerk, std::string& request_customer );
 	bool is_clerk_exist( const std::string& clerk );
 	bool complete_trade( float cash, unsigned long btoken );
-
+	bool get_requesting_trade( const std::string& clerk, trade& t );
 	std::set<std::string>* get_clerk_list()
 	{
 		return &m_clerk_set;
@@ -76,13 +76,6 @@ private:
 	rule*                  m_rule;       //优惠规则
 	std::set<std::string>  m_clerk_set;  //店员列表
 	int                    m_login_count;
-	struct trade
-	{
-		float       cash;
-		float       cashback;
-		std::string name;
-		time_t      time;
-	};
 	std::map< unsigned long, trade > m_uncomplete_trade; //商户发起
-	std::map< std::string, trade > m_requesting_trade;
+	std::map< std::string, std::list<trade> > m_requesting_trade;
 };

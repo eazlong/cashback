@@ -20,7 +20,7 @@ merchant::merchant( user_info* info )
 	m_clerk_set.insert("laowang");
 }
 
-int merchant::get_cashback( float cash, std::string& clerk, unsigned long& bussiness_token, float& cashback )
+int merchant::get_cashback( float cash, const std::string& clerk, unsigned long& bussiness_token, float& cashback )
 {
 	int ret = m_rule->get_cashback( cash, cashback );
 	if ( ret != SUCCESS )
@@ -58,7 +58,7 @@ bool merchant::complete_trade( float cash, unsigned long btoken )
 	return true;
 }
 
-int merchant::request_cashback( float cash, std::string& clerk, std::string& request_customer )
+int merchant::request_cashback( float cash, const std::string& clerk, std::string& request_customer )
 {
 	float cashback = 0;
 	int ret = m_rule->get_cashback( cash, cashback );
@@ -72,7 +72,17 @@ int merchant::request_cashback( float cash, std::string& clerk, std::string& req
 	t.cashback = cashback;
 	t.name = request_customer;
 
-	m_requesting_trade.insert( make_pair( clerk, t ) );
+	m_requesting_trade[clerk].push_back( t );
 
 	return SUCCESS;
+}
+
+bool merchant::get_requesting_trade( const std::string& clerk, trade& t )
+{
+	if ( m_requesting_trade[clerk].empty() )
+		return false;
+
+	t = m_requesting_trade[clerk].front();
+	m_requesting_trade[clerk].pop_front();
+	return true;
 }

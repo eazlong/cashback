@@ -203,3 +203,54 @@ int cashback_merchant_confirm_processer::process_data( void* data, std::string& 
 	
 	return SUCCESS;
 }
+
+int get_reqesting_trade_processer::process_data( void* data, std::string& ret_msg )
+{
+	if ( NULL == data )
+	{
+		return INVALID_PRAMETER;
+	}
+
+	get_reqeusting_trade_request* request = (get_reqeusting_trade_request*)data;
+	user* usr;
+	int ret = user_manager::get_instance()->verify( request->base, &usr );
+	if ( SUCCESS != ret )
+	{
+		return ret;
+	}
+
+	assert( request->base.type == MERCHANT );
+	merchant* mc = dynamic_cast<merchant*>( usr );
+	trade t;
+	if ( !mc->get_requesting_trade( request->clerk, t ) )
+	{
+		return ILLEGAL_TRADE;
+	}
+	
+	ret_msg = m_codec->encode( &t );
+	return SUCCESS;
+}
+
+int refresh_processer::process_data( void* data, std::string& ret_msg )
+{
+	if ( NULL == data )
+	{
+		return INVALID_PRAMETER;
+	}
+
+	cashback_confirm_request* request = (cashback_confirm_request*)data;
+	user* usr;
+	int ret = user_manager::get_instance()->verify( request->base, &usr );
+	if ( SUCCESS != ret )
+	{
+		return ret;
+	}
+
+	assert( request->base.type == CUSTOMER );
+
+	float balance = usr->get_account()->get_balance();
+
+	ret_msg = m_codec->encode( (void*)&balance );
+
+	return SUCCESS;
+}

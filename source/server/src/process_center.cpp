@@ -62,5 +62,6 @@ int process_center::process( const std::string& key, const std::string& message,
 		return ret;
 	}
 	
+	return SUCCESS;
 }
 

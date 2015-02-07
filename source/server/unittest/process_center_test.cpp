@@ -44,7 +44,7 @@ void process_center_test::test_process()
 	center->add_processer( "login", lip );
 	center->add_processer( "logout", lop );
 	
-	callback_generate_request_codec grc;
+	cashback_generate_request_codec grc;
 	generate_request_processer grp( &grc );
 	center->add_processer( "generator_request", &grp );
 
@@ -76,7 +76,7 @@ void process_center_test::test_process()
 	pos = ret.find(":");
 	token = ret.substr( pos+1 );
 	
-	callback_confirm_request_codec ccrc;
+	cashback_confirm_request_codec ccrc;
 	cashback_customer_confirm_processer ccp( &ccrc );
 	center->add_processer( "cashback_confirm", &ccp );
 
@@ -85,16 +85,29 @@ void process_center_test::test_process()
 	CPPUNIT_ASSERT( center->process( "cashback_confirm", msg, ret ) == SUCCESS );
 
 	msg = "user_name:zhaoliu\ntype:0\ntoken:" + token;
-	msg += "\nmerchant:wangwu\ncash:90.00\n";
+	msg += "\nmerchant:wangwu\ncash:90.00\nclerk:xiaoming";
 	CPPUNIT_ASSERT( center->process( "generator_request", msg, ret ) == SUCCESS );
 	
 	msg = "user_name:wangwu\ntype:1\ntoken:";
 	msg += merchant_token;
 	msg += "\nclerk:xiaoming";
-	CPPUNIT_ASSERT( center->process( "get_reqesting_trade", msg, ret ) == SUCCESS );
 
+	get_requesting_trade_codec grtc;
+	get_reqesting_trade_processer grtp( &grtc );
+	center->add_processer( "get_reqesting_trade", &grtp );
+	CPPUNIT_ASSERT( center->process( "get_reqesting_trade", msg, ret ) == SUCCESS );
+	
+	msg = "user_name:wangwu\ntype:1\ntoken:";
+	msg += merchant_token;
+	msg += "\nclerk:xiaoming";
+	msg += ret;
+	cashback_merchant_confirm_processer cmcp( &ccrc );
+	center->add_processer( "merchant_confirm", &cmcp );
 	CPPUNIT_ASSERT( center->process( "merchant_confirm", msg, ret ) == SUCCESS );
 
+	refresh_processer rfp( &ccrc );
+	center->add_processer( "refresh", &rfp );
+	msg = "user_name:zhaoliu\ntype:0\ntoken:" + token;
 	CPPUNIT_ASSERT( center->process( "refresh", msg, ret ) == SUCCESS );
 	
 	CPPUNIT_ASSERT( center->remove_processer( "register" ) );

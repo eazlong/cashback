@@ -67,3 +67,24 @@ typedef struct cashback_confirm_ack_t
 	unsigned long btoken;
 	float         cashback;
 }cashback_confirm_ack;
+
+typedef struct trade_t
+{
+	float       cash;
+	float       cashback;
+	std::string name;
+	time_t      time;
+}trade;
+
+typedef struct get_reqeusting_trade_request_t
+{
+	base_info     base;
+	std::string   clerk;
+}get_reqeusting_trade_request;
+
+typedef struct get_reqeusting_trade_ack_t
+{
+	std::string	  name;
+	float         cash;
+	float         cashback;
+}get_reqeusting_trade_ack;

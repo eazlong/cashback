@@ -17,14 +17,21 @@ public:
 	virtual std::string encode( void* data );
 };
 
-class callback_generate_request_codec : public codec
+class cashback_generate_request_codec : public codec
 {
 public:
 	virtual void* decode( const std::string& message );
 	virtual std::string encode( void* data );
 };
 
-class callback_confirm_request_codec : public codec
+class cashback_confirm_request_codec : public codec
+{
+public:
+	virtual void* decode( const std::string& message );
+	virtual std::string encode( void* data );
+};
+
+class get_requesting_trade_codec : public codec
 {
 public:
 	virtual void* decode( const std::string& message );
