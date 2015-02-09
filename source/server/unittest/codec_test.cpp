@@ -35,7 +35,7 @@ void codec_test::test_generate_request_codec()
 	std::string msg = "user_name:wangwu\ntype:1\ntoken:10000\ncash:100.00\nclerk:xiaoming";
 	d = gc.decode( msg );
 	CPPUNIT_ASSERT( d != NULL );
-	cashback_generate_request* info = (cashback_generate_request*)d;
+	cashback_request* info = (cashback_request*)d;
 	CPPUNIT_ASSERT( info->base.name == "wangwu" );
 	CPPUNIT_ASSERT( info->base.type == MERCHANT );
 	CPPUNIT_ASSERT( info->base.token == 10000 );

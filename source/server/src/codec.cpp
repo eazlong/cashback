@@ -4,15 +4,14 @@
 #include <sstream>
 #include "user.h"
 
-void* user_info_codec::decode( const std::string& message )
+void* key_value_codec::decode( const std::string& message )
 {
 	if ( message.empty() )
 		return NULL;
 
-	user_info * info = new user_info( "" );
-	
 	std::stringstream ss( message );
 	std::string temp;
+	void* buf = get_buffer();
 	while ( getline( ss, temp ) )
 	{
 		if ( !temp.empty() )
@@ -20,27 +19,56 @@ void* user_info_codec::decode( const std::string& message )
 			size_t s = temp.find(":");
 			std::string& key = temp.substr( 0, s );
 			std::string& val = temp.substr( s+1 );
-			if ( key == "user_name" )
+			if ( !fill_buffer( buf, key, val ) )
 			{
-				info->name = val;
-			}
-			else if ( key == "password" )
-			{
-				info->password = val;
-			}
-			else if ( key == "type" )
-			{
-				info->type = (user_type)atoi(val.c_str());
-			}
-			else if ( key == "token" )
-			{
-				info->token = atoi(val.c_str());
+				release_buffer( buf );
+				return NULL;
 			}
 		}
 	}
-
-	return info;
+	return buf;
 }
+
+bool user_info_codec::fill_buffer( void* buf, const std::string& key, const std::string& val )
+{
+	user_info* info = (user_info*)buf;
+
+	if ( key == "user_name" )
+	{
+		info->name = val;
+	}
+	else if ( key == "password" )
+	{
+		info->password = val;
+	}
+	else if ( key == "type" )
+	{
+		info->type = (user_type)atoi(val.c_str());
+	}
+	else if ( key == "token" )
+	{
+		info->token = atoi(val.c_str());
+	}
+	else
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void* user_info_codec::get_buffer()
+{
+	return new user_info( "" );
+}
+
+void user_info_codec::release_buffer( void* buf )
+{
+	assert( buf != NULL );
+
+	delete (user_info*)buf;
+}
+
 
 std::string user_info_codec::encode( void* data )
 {
@@ -52,49 +80,52 @@ std::string user_info_codec::encode( void* data )
 	return ss.str();
 }
 
-void* cashback_generate_request_codec::decode( const std::string& message )
-{
-	if ( message.empty() )
-		return NULL;
 
-	std::stringstream ss( message );
-	std::string temp;
-	cashback_generate_request* gen = new cashback_generate_request();
-	while ( getline( ss, temp ) )
+bool cashback_generate_request_codec::fill_buffer( void* buf, const std::string& key, const std::string& val )
+{
+	cashback_request* gen = (cashback_request*)buf;
+	if ( key == "user_name" )
 	{
-		if ( !temp.empty() )
-		{
-			size_t s = temp.find(":");
-			std::string& key = temp.substr( 0, s );
-			std::string& val = temp.substr( s+1 );
-			if ( key == "user_name" )
-			{
-				gen->base.name = val;
-			}
-			else if ( key == "type" )
-			{
-				gen->base.type = (user_type)atoi(val.c_str());
-			}
-			else if ( key == "token" )
-			{
-				gen->base.token = atoi(val.c_str());
-			}
-			else if ( key == "clerk" )
-			{
-				gen->clerk = val;
-			}
-			else if ( key == "cash" )
-			{
-				gen->cash = (float)atof(val.c_str());
-			}
-			else if ( key == "merchant" )
-			{
-				gen->merchant_name = val;
-			}
-		}
+		gen->base.name = val;
+	}
+	else if ( key == "type" )
+	{
+		gen->base.type = (user_type)atoi(val.c_str());
+	}
+	else if ( key == "token" )
+	{
+		gen->base.token = atoi(val.c_str());
+	}
+	else if ( key == "clerk" )
+	{
+		gen->clerk = val;
+	}
+	else if ( key == "cash" )
+	{
+		gen->cash = (float)atof(val.c_str());
+	}
+	else if ( key == "merchant" )
+	{
+		gen->merchant_name = val;
+	}
+	else
+	{
+		return false;
 	}
 
-	return gen;
+	return true;
+}
+
+void* cashback_generate_request_codec::get_buffer()
+{
+	return new cashback_request();
+}
+
+void cashback_generate_request_codec::release_buffer( void* buf )
+{
+	assert( buf != NULL );
+
+	delete (cashback_request*)buf;
 }
 
 std::string cashback_generate_request_codec::encode( void* data )
@@ -108,61 +139,66 @@ std::string cashback_generate_request_codec::encode( void* data )
 }
 
 
-void* cashback_confirm_request_codec::decode( const std::string& message )
+bool cashback_confirm_request_codec::fill_buffer( void* buf, const std::string& key, const std::string& val )
 {
-	if ( message.empty() )
-		return NULL;
-
-	std::stringstream ss( message );
-	std::string temp;
-	cashback_confirm_request* gen = new cashback_confirm_request();
-	while ( getline( ss, temp ) )
+	cashback_confirm_request* confirm = (cashback_confirm_request*)buf;
+	if ( key == "user_name" )
 	{
-		if ( !temp.empty() )
-		{
-			size_t s = temp.find(":");
-			std::string& key = temp.substr( 0, s );
-			std::string& val = temp.substr( s+1 );
-			if ( key == "user_name" )
-			{
-				gen->base.name = val;
-			}
-			else if ( key == "type" )
-			{
-				gen->base.type = (user_type)atoi(val.c_str());
-			}
-			else if ( key == "token" )
-			{
-				gen->base.token = atoi(val.c_str());
-			}
-			else if ( key == "clerk" )
-			{
-				gen->clerk = val;
-			}
-			else if ( key == "cash" )
-			{
-				gen->cash = (float)atof(val.c_str());
-			}
-			else if ( key == "cashback" )
-			{
-				gen->cashback = (float)atof(val.c_str());
-			}
-			else if ( key == "btoken" )
-			{
-				gen->btoken = atoi(val.c_str());
-			}
-			else if ( key == "merchant" )
-			{
-				gen->merchant_name = val;
-			}
-			else if ( key== "customer" )
-			{
-				gen->customer_name = val;
-			}
-		}
+		confirm->base.name = val;
+	}
+	else if ( key == "type" )
+	{
+		confirm->base.type = (user_type)atoi(val.c_str());
+	}
+	else if ( key == "token" )
+	{
+		confirm->base.token = atoi(val.c_str());
+	}
+	else if ( key == "clerk" )
+	{
+		confirm->clerk = val;
+	}
+	else if ( key == "cash" )
+	{
+		confirm->cash = (float)atof(val.c_str());
+	}
+	else if ( key == "cashback" )
+	{
+		confirm->cashback = (float)atof(val.c_str());
+	}
+	else if ( key == "btoken" )
+	{
+		confirm->btoken = atoi(val.c_str());
+	}
+	else if ( key == "merchant" )
+	{
+		confirm->merchant_name = val;
+	}
+	else if ( key== "customer" )
+	{
+		confirm->customer_name = val;
+	}
+	else if ( key== "tradetype" )
+	{
+	}
+	else
+	{
+		return false;
 	}
 
-	return gen;
+	return true;
+}
+
+void* cashback_confirm_request_codec::get_buffer()
+{
+	return new cashback_confirm_request();
+}
+
+void cashback_confirm_request_codec::release_buffer( void* buf )
+{
+	assert( buf != NULL );
+
+	delete (cashback_confirm_request*)buf;
 }
 
 std::string cashback_confirm_request_codec::encode( void* data )
@@ -173,40 +209,43 @@ std::string cashback_confirm_request_codec::encode( void* data )
 	return ss.str();
 }
 
-void* get_requesting_trade_codec::decode( const std::string& message )
+bool get_requesting_trade_codec::fill_buffer( void* buf, const std::string& key, const std::string& val )
 {
-	if ( message.empty() )
-		return NULL;
-
-	std::stringstream ss( message );
-	std::string temp;
-	get_reqeusting_trade_request* reqesting = new get_reqeusting_trade_request();
-	while ( getline( ss, temp ) )
+	get_reqeusting_trade_request* requesting = (get_reqeusting_trade_request*)buf;
+	if ( key == "user_name" )
 	{
-		if ( !temp.empty() )
-		{
-			size_t s = temp.find(":");
-			std::string& key = temp.substr( 0, s );
-			std::string& val = temp.substr( s+1 );
-			if ( key == "user_name" )
-			{
-				reqesting->base.name = val;
-			}
-			else if ( key == "type" )
-			{
-				reqesting->base.type = (user_type)atoi(val.c_str());
-			}
-			else if ( key == "token" )
-			{
-				reqesting->base.token = atoi(val.c_str());
-			}
-			else if ( key == "clerk" )
-			{
-				reqesting->clerk = val;
-			}
-		}
+		requesting->base.name = val;
 	}
-	return reqesting;
+	else if ( key == "type" )
+	{
+		requesting->base.type = (user_type)atoi(val.c_str());
+	}
+	else if ( key == "token" )
+	{
+		requesting->base.token = atoi(val.c_str());
+	}
+	else if ( key == "clerk" )
+	{
+		requesting->clerk = val;
+	}
+	else
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void* get_requesting_trade_codec::get_buffer()
+{
+	return new get_reqeusting_trade_request();
+}
+
+void get_requesting_trade_codec::release_buffer( void* buf )
+{
+	assert( buf != NULL );
+
+	delete (get_reqeusting_trade_request*)buf;
 }
 
 std::string get_requesting_trade_codec::encode( void* data )
@@ -215,6 +254,6 @@ std::string get_requesting_trade_codec::encode( void* data )
 
 	trade* ack = (trade*)data;
 	std::ostringstream ss;
-	ss << "cash:" << ack->cash << "\ncashback:" << ack->cashback << "\ncustomer:" << ack->name;
+	ss << "cash:" << ack->cash << "\ncashback:" << ack->cashback << "\ncustomer:" << ack->name << "\ntradetype:" << ack->ttype;
 	return ss.str();
 }

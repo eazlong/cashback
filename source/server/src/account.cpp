@@ -30,7 +30,7 @@ float base_account::sub( float cash )
 	return m_balance;
 }
 
-float base_account::get_balance() const
+float base_account::get_balance( const std::string& merchant_name ) const
 {
 	return m_balance;
 }

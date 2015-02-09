@@ -83,9 +83,10 @@ void process_center_test::test_process()
 	msg = "user_name:zhaoliu\ntype:0\ntoken:" + token;
 	msg += "\nmerchant:wangwu\ncash:100.00\ncashback:10.00\nbtoken:" + btoken;
 	CPPUNIT_ASSERT( center->process( "cashback_confirm", msg, ret ) == SUCCESS );
+	CPPUNIT_ASSERT( ret == "balance:10" );
 
 	msg = "user_name:zhaoliu\ntype:0\ntoken:" + token;
-	msg += "\nmerchant:wangwu\ncash:90.00\nclerk:xiaoming";
+	msg += "\nmerchant:wangwu\ncash:90.00\nclerk:xiaoming\ntradetype=0";
 	CPPUNIT_ASSERT( center->process( "generator_request", msg, ret ) == SUCCESS );
 	
 	msg = "user_name:wangwu\ntype:1\ntoken:";
@@ -109,8 +110,28 @@ void process_center_test::test_process()
 	center->add_processer( "refresh", &rfp );
 	msg = "user_name:zhaoliu\ntype:0\ntoken:" + token;
 	CPPUNIT_ASSERT( center->process( "refresh", msg, ret ) == SUCCESS );
-	
-	CPPUNIT_ASSERT( center->remove_processer( "register" ) );
+	CPPUNIT_ASSERT( ret == "balance:19" );
+
+	msg = "user_name:zhaoliu\ntype:0\ntoken:" + token;
+	msg += "\nmerchant:wangwu\ncash:10.00\n\nclerk:xiaoming\ntradetype=1";
+	cost_cashback_processer costp( &ccrc );
+	center->add_processer( "refresh", &rfp );
+	CPPUNIT_ASSERT( center->process( "cost_cashback", msg, ret ) );
+
+	msg = "user_name:wangwu\ntype:1\ntoken:";
+	msg += merchant_token;
+	msg += "\nclerk:xiaoming";
+ 	CPPUNIT_ASSERT( center->process( "get_reqesting_trade", msg, ret ) == SUCCESS );
+ 
+ 	msg = "user_name:wangwu\ntype:1\ntoken:" + token¡¡+¡¡ret;
+	center->add_processer( "confirm_cost", &cmcp );
+ 	CPPUNIT_ASSERT( center->process( "confirm_cost", msg, ret ) );
+ 
+// 	CPPUNIT_ASSERT( center->process( "cost_cashback", msg, ret ) );
+// 
+// 	CPPUNIT_ASSERT( center->process( "confirm_cost", msg, ret ) );
+
+ 	CPPUNIT_ASSERT( center->remove_processer( "register" ) );
 	delete cc;
 	delete lip;
 	delete lop;

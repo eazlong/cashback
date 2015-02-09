@@ -4,6 +4,7 @@
 #include "user_manager.h"
 #include "codec.h"
 #include "user.h"
+#include "log.h"
 #include <assert.h>
 
 int processer::process( const std::string& message, std::string& ret_msg )
@@ -17,16 +18,16 @@ int processer::process( const std::string& message, std::string& ret_msg )
 	if ( NULL == decoded_data )
 	{
 		ret_msg = "internal error!";
-		//error_log( "decode message \"" << message << "\" failed!" );
+		error_log( "decode message \"" << message << "\" failed!" );
 		return DECODE_FAILED;
 	}
 
-	return process_data( decoded_data, ret_msg );
+	return main_process( decoded_data, ret_msg );
 }
 
 
 
-int regist_processer::process_data( void* data, std::string& ret_msg )
+int regist_processer::main_process( void* data, std::string& ret_msg )
 {
 	if ( NULL == data )
 	{
@@ -46,7 +47,7 @@ int regist_processer::process_data( void* data, std::string& ret_msg )
 	return ret;
 }
 
-int login_processer::process_data( void* data, std::string& ret_msg )
+int login_processer::main_process( void* data, std::string& ret_msg )
 {
 	if ( NULL == data )
 	{
@@ -66,7 +67,7 @@ int login_processer::process_data( void* data, std::string& ret_msg )
 	return ret;
 }
 
-int logout_processer::process_data( void* data, std::string& ret_msg )
+int logout_processer::main_process( void* data, std::string& ret_msg )
 {
 	if ( NULL == data )
 	{
@@ -77,14 +78,14 @@ int logout_processer::process_data( void* data, std::string& ret_msg )
 }
 
 
-int generate_request_processer::process_data( void* data, std::string& ret_msg )
+int generate_request_processer::main_process( void* data, std::string& ret_msg )
 {
 	if ( NULL == data )
 	{
 		return INVALID_PRAMETER;
 	}
 
-	cashback_generate_request* request = (cashback_generate_request*)data;
+	cashback_request* request = (cashback_request*)data;
 	user* usr;
 	int ret = user_manager::get_instance()->verify( request->base, &usr );
 	if ( SUCCESS != ret )
@@ -127,7 +128,7 @@ int generate_request_processer::process_data( void* data, std::string& ret_msg )
 			}
 
 			merchant* mc = dynamic_cast<merchant*>(u);
-			ret = mc->request_cashback( request->cash, request->clerk, request->base.name ); //请求生成优惠券
+			ret = mc->request_cashback( request->cash, request->ttype, request->clerk, request->base.name ); //请求生成优惠券
 			if ( SUCCESS != ret )
 			{
 				return ret;
@@ -139,7 +140,7 @@ int generate_request_processer::process_data( void* data, std::string& ret_msg )
 	return SUCCESS;
 }
 
-int cashback_customer_confirm_processer::process_data( void* data, std::string& ret_msg )
+int cashback_customer_confirm_processer::main_process( void* data, std::string& ret_msg )
 {
 	//身份验证
 	if ( NULL == data )
@@ -176,13 +177,14 @@ int cashback_customer_confirm_processer::process_data( void* data, std::string& 
 	return SUCCESS;
 }
 
-int cashback_merchant_confirm_processer::process_data( void* data, std::string& ret_msg )
+int cashback_merchant_confirm_processer::main_process( void* data, std::string& ret_msg )
 {
 	if ( NULL == data )
 	{
 		return INVALID_PRAMETER;
 	}
-
+	
+	//商户认证
 	cashback_confirm_request* request = (cashback_confirm_request*)data;
 	user* usr;
 	int ret = user_manager::get_instance()->verify( request->base, &usr );
@@ -204,7 +206,7 @@ int cashback_merchant_confirm_processer::process_data( void* data, std::string& 
 	return SUCCESS;
 }
 
-int get_reqesting_trade_processer::process_data( void* data, std::string& ret_msg )
+int get_reqesting_trade_processer::main_process( void* data, std::string& ret_msg )
 {
 	if ( NULL == data )
 	{
@@ -231,7 +233,7 @@ int get_reqesting_trade_processer::process_data( void* data, std::string& ret_ms
 	return SUCCESS;
 }
 
-int refresh_processer::process_data( void* data, std::string& ret_msg )
+int refresh_processer::main_process( void* data, std::string& ret_msg )
 {
 	if ( NULL == data )
 	{
@@ -248,9 +250,49 @@ int refresh_processer::process_data( void* data, std::string& ret_msg )
 
 	assert( request->base.type == CUSTOMER );
 
-	float balance = usr->get_account()->get_balance();
+	float balance = usr->get_account()->get_balance( request->merchant_name );
 
 	ret_msg = m_codec->encode( (void*)&balance );
+
+	return SUCCESS;
+}
+
+int cost_cashback_processer::main_process( void* data, std::string& ret_msg )
+{
+	if ( NULL == data )
+	{
+		return INVALID_PRAMETER;
+	}
+
+	cashback_request* request = (cashback_request*)data;
+	user* usr;
+	int ret = user_manager::get_instance()->verify( request->base, &usr );
+	if ( SUCCESS != ret )
+	{
+		return ret;
+	}
+	
+	//获取用户余额
+	float balance = usr->get_account()->get_balance( request->merchant_name );
+	if ( balance < request->cash )
+	{
+		return INSUFFICIENT_BALANCE;
+	}
+
+	//商户认证
+	user * u = user_manager::get_instance()->get_user( request->merchant_name, MERCHANT );
+	if ( u == NULL )
+	{
+		return USER_NOT_FOUND;
+	}
+
+	//消费优惠券，等待商户确认
+	merchant* mc = dynamic_cast<merchant*>(u);
+	ret = mc->request_cashback( request->cash, request->ttype, request->clerk, request->base.name ); //请求消费优惠券
+	if ( SUCCESS != ret )
+	{
+		return ret;
+	}
 
 	return SUCCESS;
 }

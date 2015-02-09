@@ -16,3 +16,4 @@
 #define DECODE_FAILED             -201
 
 #define ILLEGAL_TRADE             -301
+#define INSUFFICIENT_BALANCE      -302 //Óà¶î²»×ã

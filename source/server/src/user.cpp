@@ -36,6 +36,7 @@ int merchant::get_cashback( float cash, const std::string& clerk, unsigned long&
 	t.cash = cash;
 	t.cashback = cashback;
 	t.name = clerk;
+	t.ttype = CASHBACK_GENERATE;
 	m_uncomplete_trade.insert( make_pair(bussiness_token, t) );
 
 	return SUCCESS;
@@ -58,7 +59,7 @@ bool merchant::complete_trade( float cash, unsigned long btoken )
 	return true;
 }
 
-int merchant::request_cashback( float cash, const std::string& clerk, std::string& request_customer )
+int merchant::request_cashback( float cash, trade_type type, const std::string& clerk, std::string& request_customer )
 {
 	float cashback = 0;
 	int ret = m_rule->get_cashback( cash, cashback );
@@ -69,8 +70,9 @@ int merchant::request_cashback( float cash, const std::string& clerk, std::strin
 
 	trade t;
 	t.cash = cash;
-	t.cashback = cashback;
+	t.cashback = type==CASHBACK_GENERATE?cashback:0; //使用优惠券的交易不再生成优惠。
 	t.name = request_customer;
+	t.ttype = type;
 
 	m_requesting_trade[clerk].push_back( t );
 
