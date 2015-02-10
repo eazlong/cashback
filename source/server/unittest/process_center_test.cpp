@@ -44,10 +44,6 @@ void process_center_test::test_process()
 	center->add_processer( "login", lip );
 	center->add_processer( "logout", lop );
 	
-	cashback_generate_request_codec grc;
-	generate_request_processer grp( &grc );
-	center->add_processer( "generator_request", &grp );
-
 	std::string ret;
 	CPPUNIT_ASSERT( center->process( "register", "user_name:wangwu\npassword:******\ntype:1", ret ) == SUCCESS );
 	debug_log( "\n" << ret );
@@ -61,6 +57,10 @@ void process_center_test::test_process()
 	CPPUNIT_ASSERT( center->process( "login", "user_name:wangwu\npassword:******\ntype:1", ret ) == SUCCESS );
 	CPPUNIT_ASSERT( center->process( "login", "user_name:wangwu\npassword:******\ntype:1", ret ) == SUCCESS );
 
+	cashback_generate_request_codec grc;
+	generate_request_processer grp( &grc );
+	center->add_processer( "generator_request", &grp );
+	//商户请求生成
 	pos = ret.find(":");
 	std::string merchant_token = ret.substr( pos+1 );
 	msg = "user_name:wangwu\ntype:1\ntoken:";
@@ -68,25 +68,27 @@ void process_center_test::test_process()
 	msg += "\ncash:100.00\nclerk:xiaoming";
 	CPPUNIT_ASSERT( center->process( "generator_request", msg, ret ) == SUCCESS );
 	
+	//用户注册
 	pos = ret.find("btoken:");
 	size_t pos2 = ret.find( '\n', pos );
 	std::string btoken = ret.substr( pos+strlen("btoken:"), pos2-pos-strlen("btoken:") );
-	
 	CPPUNIT_ASSERT( center->process( "register", "user_name:zhaoliu\npassword:******\ntype:0", ret ) == SUCCESS );
+
+	//用户扫描
 	pos = ret.find(":");
 	token = ret.substr( pos+1 );
 	
 	cashback_confirm_request_codec ccrc;
 	cashback_customer_confirm_processer ccp( &ccrc );
-	center->add_processer( "cashback_confirm", &ccp );
+	center->add_processer( "customer_confirm", &ccp );
 
 	msg = "user_name:zhaoliu\ntype:0\ntoken:" + token;
 	msg += "\nmerchant:wangwu\ncash:100.00\ncashback:10.00\nbtoken:" + btoken;
-	CPPUNIT_ASSERT( center->process( "cashback_confirm", msg, ret ) == SUCCESS );
+	CPPUNIT_ASSERT( center->process( "customer_confirm", msg, ret ) == SUCCESS );
 	CPPUNIT_ASSERT( ret == "balance:10" );
 
 	msg = "user_name:zhaoliu\ntype:0\ntoken:" + token;
-	msg += "\nmerchant:wangwu\ncash:90.00\nclerk:xiaoming\ntradetype=0";
+	msg += "\nmerchant:wangwu\ncash:90.00\nclerk:xiaoming\ntradetype:0";
 	CPPUNIT_ASSERT( center->process( "generator_request", msg, ret ) == SUCCESS );
 	
 	msg = "user_name:wangwu\ntype:1\ntoken:";
@@ -113,25 +115,35 @@ void process_center_test::test_process()
 	CPPUNIT_ASSERT( ret == "balance:19" );
 
 	msg = "user_name:zhaoliu\ntype:0\ntoken:" + token;
-	msg += "\nmerchant:wangwu\ncash:10.00\n\nclerk:xiaoming\ntradetype=1";
-	cost_cashback_processer costp( &ccrc );
-	center->add_processer( "refresh", &rfp );
-	CPPUNIT_ASSERT( center->process( "cost_cashback", msg, ret ) );
+	msg += "\nmerchant:wangwu\ncash:10.00\n\nclerk:xiaoming\ntradetype:1";
+	cost_cashback_processer costp( &grc );
+	center->add_processer( "cost_cashback", &costp );
+	CPPUNIT_ASSERT( center->process( "cost_cashback", msg, ret ) == SUCCESS );
 
 	msg = "user_name:wangwu\ntype:1\ntoken:";
 	msg += merchant_token;
 	msg += "\nclerk:xiaoming";
  	CPPUNIT_ASSERT( center->process( "get_reqesting_trade", msg, ret ) == SUCCESS );
  
- 	msg = "user_name:wangwu\ntype:1\ntoken:" + token　+　ret;
-	center->add_processer( "confirm_cost", &cmcp );
- 	CPPUNIT_ASSERT( center->process( "confirm_cost", msg, ret ) );
- 
-// 	CPPUNIT_ASSERT( center->process( "cost_cashback", msg, ret ) );
-// 
-// 	CPPUNIT_ASSERT( center->process( "confirm_cost", msg, ret ) );
+ 	msg = "user_name:wangwu\ntype:1\ntoken:" + token + "\n" + ret;
+ 	CPPUNIT_ASSERT( center->process( "merchant_confirm", msg, ret ) == SUCCESS );
+
+	center->add_processer( "refresh", &rfp );
+	msg = "user_name:zhaoliu\ntype:0\ntoken:" + token;
+	CPPUNIT_ASSERT( center->process( "refresh", msg, ret ) == SUCCESS );
+	CPPUNIT_ASSERT( ret == "balance:9" );
+
+	msg = "user_name:zhaoliu\ntype:0\ntoken:" + token;
+	msg += "\nmerchant:wangwu\ncash:5.00\nbtoken:";
+	msg += merchant_token;
+
+	CPPUNIT_ASSERT( center->process( "customer_confirm", msg, ret ) == SUCCESS );
+	CPPUNIT_ASSERT( ret == "balance:4" );
+
+	
 
  	CPPUNIT_ASSERT( center->remove_processer( "register" ) );
+
 	delete cc;
 	delete lip;
 	delete lop;

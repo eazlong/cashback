@@ -5,39 +5,62 @@
 #include <set>
 #include "datas.h"
 #include "account.h"
+#include "share_manager.h"
+#include "friends_manager.h"
 
 class rule;
 
 class user
 {
 public:
-	user( /*user_info* info*/ );
+	user( user_info* info, account* accnt = NULL );
 	virtual ~user(void);
+
+	virtual account* get_account() 
+	{
+		return m_account;
+	}
+	
 	virtual int get_token() const
 	{
 		return m_user_info.token;
 	}
 
-	virtual account* get_account() 
-	{
-		return &m_account;
-	}
-
 	virtual void login() = 0;
 	virtual bool logout() = 0;
-	
+
+	friends_manager* get_friends_manager() const
+	{
+		return m_friends_manager;
+	}
+
+	share_manager* get_share_manager() const
+	{
+		return m_share_manager;
+	}
+
 protected:
-	typedef std::map< std::string, std::list<std::string> > friends_map; //group, friend user name
-	base_account     m_account;
-	friends_map m_friend_map;//
-	user_info   m_user_info; //用户基本信息
+	friends_manager*               m_friends_manager; //好友管理
+	share_manager*                 m_share_manager;   //分享信息管理
+	account*                       m_account;         //账号
+	user_info                      m_user_info;       //用户基本信息
 };
 
 
 class customer : public user
 {
 public:
-	customer( user_info* info ){}
+	customer( user_info* info )
+		:user(info)
+	{
+
+	}
+	
+	virtual ~customer()
+	{
+	
+	}
+
 	virtual void login()
 	{
 		m_user_info.token ++ ;
@@ -76,6 +99,6 @@ private:
 	int                    m_login_count;
 	rule*                  m_rule;       //优惠规则
 	std::set<std::string>  m_clerk_set;  //店员列表
-	std::map< unsigned long, trade > m_uncomplete_trade; //商户发起
+	std::map< unsigned long, trade >          m_uncomplete_trade; //商户发起
 	std::map< std::string, std::list<trade> > m_requesting_trade;
 };

@@ -3,17 +3,24 @@
 #include "rule.h"
 #include "error_code.h"
 
-user::user( /*user_info* info*/ )
-:m_user_info("")
+user::user( user_info* info, account* accnt )
+:m_user_info( (*info) ),
+ m_account(new base_account), 
+ m_friends_manager( new friends_manager ), 
+ m_share_manager( new share_manager )
 {
 	m_user_info.token = 10000;
 }
 
 user::~user(void)
 {
+	delete m_account;
+	delete m_friends_manager;
+	delete m_share_manager;
 }
 
 merchant::merchant( user_info* info )
+	:user(info)
 {
 	m_rule = new discount;
 	m_clerk_set.insert("xiaoming");
@@ -88,3 +95,4 @@ bool merchant::get_requesting_trade( const std::string& clerk, trade& t )
 	m_requesting_trade[clerk].pop_front();
 	return true;
 }
+

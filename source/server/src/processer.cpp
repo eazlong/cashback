@@ -164,17 +164,28 @@ int cashback_customer_confirm_processer::main_process( void* data, std::string& 
 	}
 
 	merchant* mc = dynamic_cast<merchant*>( u );
-	if ( !mc->complete_trade( request->cash, request->btoken ) )
+	if ( u->get_token() == request->btoken )
 	{
-		return ILLEGAL_TRADE;
+		float balance = usr->get_account()->sub( request->cash, request->merchant_name );
+		ret_msg = m_codec->encode( (void*)&balance );
+		//usr->add_log();
+		return SUCCESS;
 	}
+	else
+	{
+		if ( !mc->complete_trade( request->cash, request->btoken ) )
+		{
+			return ILLEGAL_TRADE;
+		}
 
-	//消费完成
-	float balance = usr->get_account()->add( request->cashback );
+		//消费完成
+		float balance = usr->get_account()->add( request->cashback, request->merchant_name );
 
-	ret_msg = m_codec->encode( (void*)&balance );
-	//usr->add_log();
-	return SUCCESS;
+		ret_msg = m_codec->encode( (void*)&balance );
+		//usr->add_log();
+		return SUCCESS;
+	}
+	
 }
 
 int cashback_merchant_confirm_processer::main_process( void* data, std::string& ret_msg )
@@ -200,8 +211,16 @@ int cashback_merchant_confirm_processer::main_process( void* data, std::string& 
 		return USER_NOT_FOUND;
 	}
 	
-	//消费完成
-	float balance = u->get_account()->add( request->cashback );
+	//交易完成
+	switch ( request->ttype )
+	{
+	case CASHBACK_GENERATE:
+		u->get_account()->add( request->cashback, request->merchant_name );
+		break;
+	case CASHBACK_COST:
+		u->get_account()->sub( request->cash, request->merchant_name );
+		break;
+	}
 	
 	return SUCCESS;
 }
@@ -286,9 +305,9 @@ int cost_cashback_processer::main_process( void* data, std::string& ret_msg )
 		return USER_NOT_FOUND;
 	}
 
-	//消费优惠券，等待商户确认
+	//请求消费优惠券，等待商户确认
 	merchant* mc = dynamic_cast<merchant*>(u);
-	ret = mc->request_cashback( request->cash, request->ttype, request->clerk, request->base.name ); //请求消费优惠券
+	ret = mc->request_cashback( request->cash, request->ttype, request->clerk, request->base.name ); 
 	if ( SUCCESS != ret )
 	{
 		return ret;

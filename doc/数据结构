@@ -1,9 +1,12 @@
-struct customer
-{
-	account a;
-};
+base_info 
+id        name         type        phone        address
 
-struct merchant
-{
-};
+friends
+id        friend_id    group
+
+shared
+id        amount       merchant    group
+
+account
+id        merchant     amount      expiration
 

@@ -18,13 +18,13 @@ base_account::~base_account( void )
 
 }
 
-float base_account::add( float cash )
+float base_account::add( float cash, const std::string& merch )
 {
 	m_balance += cash;
 	return m_balance;
 }
 
-float base_account::sub( float cash )
+float base_account::sub( float cash, const std::string& merch )
 {
 	m_balance -= cash;
 	return m_balance;

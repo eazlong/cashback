@@ -108,6 +108,10 @@ bool cashback_generate_request_codec::fill_buffer( void* buf, const std::string&
 	{
 		gen->merchant_name = val;
 	}
+	else if ( key == "tradetype" )
+	{
+		gen->ttype = (trade_type)atoi(val.c_str());
+	}
 	else
 	{
 		return false;
@@ -180,6 +184,7 @@ bool cashback_confirm_request_codec::fill_buffer( void* buf, const std::string& 
 	}
 	else if ( key== "tradetype" )
 	{
+		confirm->ttype = (trade_type)atoi(val.c_str());
 	}
 	else
 	{
