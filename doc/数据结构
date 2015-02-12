@@ -1,7 +1,7 @@
-base_info 
+user
 id        name         type        phone        address
 
-friends
+friend
 id        friend_id    group
 
 shared
