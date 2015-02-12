@@ -12,7 +12,7 @@ public:
 	virtual ~friends_manager(void);
 
 	//∫√”—π‹¿Ì
-	virtual bool add_friend( const std::string& name, const std::string& group );
+	virtual bool add_friend( const friend_info& info );
 	virtual bool del_friend( const std::string& name );
 	virtual bool change_group( const std::string& name, const std::string& group );
 
@@ -20,6 +20,6 @@ public:
 	virtual std::string get_group( const std::string& name );
 
 protected:
-	typedef std::map< std::string, friend_info > friends_map; //group, friend user name
+	typedef std::map< std::string, friend_info > friends_map; //friend user name
 	friends_map                    m_friend_map;
 };

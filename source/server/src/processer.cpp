@@ -22,7 +22,11 @@ int processer::process( const std::string& message, std::string& ret_msg )
 		return DECODE_FAILED;
 	}
 
-	return main_process( decoded_data, ret_msg );
+	int ret = main_process( decoded_data, ret_msg );
+
+	m_codec->release_buffer( decoded_data );
+	
+	return ret;
 }
 
 
@@ -218,7 +222,8 @@ int cashback_merchant_confirm_processer::main_process( void* data, std::string& 
 		u->get_account()->add( request->cashback, request->merchant_name );
 		break;
 	case CASHBACK_COST:
-		u->get_account()->sub( request->cash, request->merchant_name );
+		customer * c = (customer *)u;
+		c->finish_trade();
 		break;
 	}
 	
@@ -305,13 +310,205 @@ int cost_cashback_processer::main_process( void* data, std::string& ret_msg )
 		return USER_NOT_FOUND;
 	}
 
-	//请求消费优惠券，等待商户确认
+	//共享券消费
+	std::map<std::string, shared_info*> already;
+	float cash = 0.0;
+	if ( !request->shares.empty() )
+	{
+		for ( std::map<std::string, shared_info>::iterator it = request->shares.begin();
+			it != request->shares.end(); it++ )
+		{
+			if ( !cost_shares( request->base.name, it->first, it->second ) ) 
+			{
+				cancel_trade( already );
+				return ILLEGAL_TRADE;
+			}
+
+			already.insert( make_pair(it->first, &it->second) );
+			cash += it->second.amount;
+		}
+	}
+	
+	//请求消费，等待商户确认
 	merchant* mc = dynamic_cast<merchant*>(u);
-	ret = mc->request_cashback( request->cash, request->ttype, request->clerk, request->base.name ); 
+	ret = mc->request_cashback( request->cash+cash, request->ttype, request->clerk, request->base.name ); 
+	if ( SUCCESS != ret )
+	{
+		cancel_trade( already );
+		return ret;
+	}
+
+	customer* c = (customer*)usr;
+	c->trading( request );
+
+	return SUCCESS;
+}
+
+bool cost_cashback_processer::cancel_trade( std::map<std::string, shared_info*>& already )
+{
+	//如果交易中有优惠券验证失败，回滚，取消这次交易。
+	for ( std::map<std::string, shared_info*>::iterator it_already = already.begin();
+		it_already != already.end(); it_already ++ )
+	{
+		user* f = user_manager::get_instance()->get_user( it_already->first, CUSTOMER );
+		if ( f == NULL )
+			return false;
+		f->get_shared_manager()->add_shared_cash(it_already->second->group, it_already->second->merchant, it_already->second->amount );
+	}
+	return true;
+}
+
+bool cost_cashback_processer::cost_shares( const std::string& name, const std::string& friend_name, shared_info& shares )
+{
+	user* f = user_manager::get_instance()->get_user( friend_name, CUSTOMER );
+	if ( f == NULL )
+		return false;
+	std::string group = f->get_friends_manager()->get_group( name );
+	if ( group.empty() )
+		return false;
+	shares.group = group;
+	shared_info info;
+	if ( SUCCESS != f->get_shared_manager()->get_shared_cash(group, shares.merchant, info ) )
+		return false;
+
+	if ( info.amount < shares.amount )
+		return false;
+	
+	if ( SUCCESS != f->get_shared_manager()->cost_shared_cash( group, shares.merchant, name, shares.amount ) )
+		return false;
+
+	return true;
+}
+
+int friends_processer::main_process( void* data, std::string& ret_msg )
+{
+	if ( NULL == data )
+	{
+		return INVALID_PRAMETER;
+	}
+
+	friend_manager_request* request = (friend_manager_request*)data;
+	user* usr;
+	int ret = user_manager::get_instance()->verify( request->base, &usr );
 	if ( SUCCESS != ret )
 	{
 		return ret;
 	}
 
-	return SUCCESS;
+	if ( request->base.type == MERCHANT )
+	{
+		ret_msg = "merchant doesn't support friend manager yet";
+		return OPERATION_UNSUPPORT;
+	}
+
+	customer* cst = (customer*)usr;
+	switch ( request->otype )
+	{
+	case ADD:
+		if ( !cst->get_friends_manager()->add_friend( request->friends ) )
+			ret = USER_EXISTS;
+		break;
+	case DEL:
+		if ( !cst->get_friends_manager()->del_friend( request->friends.name ) )
+			ret = USER_NOT_FOUND;
+		break;
+	case GET:
+		{
+			std::list<friend_info> friends;
+			cst->get_friends_manager()->get_friends( "", friends );
+			ret_msg = m_codec->encode( &friends );
+		}
+		break;
+	default:
+		ret_msg = "operation type error!";
+		return OPERATION_UNSUPPORT;
+	}
+
+	return ret;
+}
+
+int shared_processer::main_process( void* data, std::string& ret_msg )
+{
+	if ( NULL == data )
+	{
+		return INVALID_PRAMETER;
+	}
+
+	shared_manager_request* request = (shared_manager_request*)data;
+	user* usr;
+	int ret = user_manager::get_instance()->verify( request->base, &usr );
+	if ( SUCCESS != ret )
+	{
+		return ret;
+	}
+
+	if ( request->base.type == MERCHANT )
+	{
+		ret_msg = "merchant doesn't support shared manager yet";
+		return OPERATION_UNSUPPORT;
+	}
+	
+	customer* cst = (customer*)usr;
+	switch ( request->otype )
+	{
+	case ADD:
+		ret = cst->get_shared_manager()->share( request->shared );
+		if ( ret == SUCCESS )
+		{
+			cst->get_account()->sub( request->shared.amount, request->shared.merchant );
+		}
+		break;
+	case DEL:
+		ret = cst->get_shared_manager()->cancel_share( request->shared.group, request->shared.merchant );
+		if ( ret == SUCCESS )
+		{
+			cst->get_account()->add( request->shared.amount, request->shared.merchant );
+		}
+		break;
+	case GET:
+		{
+			std::map< std::string,std::list<shared_info> > shares_map;
+			if ( request->get_from == "self" )
+			{
+				std::list<shared_info> shares;
+				ret = cst->get_shared_manager()->get_shared_cash( request->shared.merchant, shares );
+				shares_map.insert( make_pair( request->base.name, shares ) );
+			}
+			else if ( request->get_from == "friends" )
+			{
+				//取得好友列表
+				std::list<friend_info> friends;
+				if ( !cst->get_friends_manager()->get_friends( "", friends ) )
+					return FAILED;
+				for ( std::list<friend_info>::iterator it = friends.begin(); 
+					it != friends.end(); it ++ )
+				{
+					std::list<shared_info> shares;
+					user* f = user_manager::get_instance()->get_user( it->name, CUSTOMER );
+					if ( f == NULL )
+					{
+						continue;
+					}
+					std::string group = f->get_friends_manager()->get_group( request->base.name );
+					if ( group == "" )
+					{
+						continue;
+					}
+					shared_info info;
+					if ( SUCCESS == f->get_shared_manager()->get_shared_cash( group, request->shared.merchant, info ) )
+					{
+						shares.push_back( info );
+					}
+					shares_map.insert( make_pair( it->name, shares ) );
+				}
+			}
+			ret_msg = m_codec->encode( &shares_map );
+		}
+		break;
+	default:
+		ret_msg = "operation type error!";
+		return OPERATION_UNSUPPORT;
+	}
+
+	return ret;
 }

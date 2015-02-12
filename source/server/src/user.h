@@ -34,7 +34,7 @@ public:
 		return m_friends_manager;
 	}
 
-	share_manager* get_share_manager() const
+	share_manager* get_shared_manager() const
 	{
 		return m_share_manager;
 	}
@@ -51,7 +51,7 @@ class customer : public user
 {
 public:
 	customer( user_info* info )
-		:user(info)
+		:user(info), m_requst(NULL)
 	{
 
 	}
@@ -70,6 +70,25 @@ public:
 	{
 		return true;
 	}
+
+	void trading( cashback_request* request )
+	{
+		m_requst = new cashback_request;
+		m_requst->base.name = request->base.name;
+		m_requst->merchant_name = request->merchant_name;
+		m_requst->cash = request->cash;
+		m_requst->ttype = request->ttype;
+		m_requst->shares = request->shares;
+	}
+
+	void finish_trade()
+	{
+		m_account->sub( m_requst->cash, m_requst->merchant_name );
+		delete m_requst;
+		m_requst = NULL;
+	}
+protected:
+	cashback_request* m_requst;
 };
 
 class merchant : public user

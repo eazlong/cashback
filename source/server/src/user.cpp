@@ -77,7 +77,7 @@ int merchant::request_cashback( float cash, trade_type type, const std::string& 
 
 	trade t;
 	t.cash = cash;
-	t.cashback = type==CASHBACK_GENERATE?cashback:0; //使用优惠券的交易不再生成优惠。
+	t.cashback = type==CASHBACK_GENERATE?cashback:0; //使用优惠券的交易不再生成优惠券。
 	t.name = request_customer;
 	t.ttype = type;
 

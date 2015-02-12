@@ -140,7 +140,51 @@ void process_center_test::test_process()
 	CPPUNIT_ASSERT( center->process( "customer_confirm", msg, ret ) == SUCCESS );
 	CPPUNIT_ASSERT( ret == "balance:4" );
 
+	CPPUNIT_ASSERT( center->process( "register", "user_name:zhouyi\npassword:******99\ntype:0", ret ) == SUCCESS );
+	pos = ret.find(":");
+	std::string zhouyi_token = ret.substr( pos+1 );
+
+	msg = "user_name:zhaoliu\ntype:0\ntoken:" + token;
+	msg += "\nfriend_name:zhouyi\nnickname:zy\ngroup:g1\noperation:0";
+	friend_manager_codec fmc;
+	friends_processer fp(&fmc);
+	center->add_processer( "friends_manager", &fp );
+
+	CPPUNIT_ASSERT( center->process( "friends_manager", msg, ret ) == SUCCESS );
+	msg = "user_name:zhouyi\ntype:0\ntoken:" + zhouyi_token;
+	msg += "\nfriend_name:zhaoliu\nnickname:zl\ngroup:g1\noperation:0";
+	CPPUNIT_ASSERT( center->process( "friends_manager", msg, ret ) == SUCCESS );
+
+	shared_manager_codec smc;
+	shared_processer sp( &smc );
+	center->add_processer( "shared_manager", &sp );
+	msg = "user_name:zhaoliu\ntype:0\ntoken:" + token;
+	msg += "\nmerchant:wangwu\ncash:3.00\ngroup:g1\noperation:0";
+	CPPUNIT_ASSERT( center->process( "shared_manager", msg, ret ) == SUCCESS );
+	msg = "user_name:zhaoliu\ntype:0\ntoken:" + token;
+	CPPUNIT_ASSERT( center->process( "refresh", msg, ret ) == SUCCESS );
+	CPPUNIT_ASSERT( ret == "balance:1" );
+
+	msg = "user_name:zhouyi\ntype:0\ntoken:" + zhouyi_token;
+	msg += "\nmerchant:wangwu\noperation:2\nget:friends";
+	CPPUNIT_ASSERT( center->process( "shared_manager", msg, ret ) == SUCCESS );
 	
+	msg = "user_name:zhouyi\ntype:0\ntoken:" + zhouyi_token;
+	msg += "\nmerchant:wangwu\ncash:1.00\nclerk:xiaoming\ntradetype:1\n";
+	msg += ret;
+	CPPUNIT_ASSERT( center->process( "cost_cashback", msg, ret ) == SUCCESS );
+	
+	msg = "user_name:wangwu\ntype:1\ntoken:";
+	msg += merchant_token;
+	msg += "\nclerk:xiaoming";
+	CPPUNIT_ASSERT( center->process( "get_reqesting_trade", msg, ret ) == SUCCESS );
+
+	msg = "user_name:wangwu\ntype:1\ntoken:" + token + "\n" + ret;
+	CPPUNIT_ASSERT( center->process( "merchant_confirm", msg, ret ) == SUCCESS );
+
+	msg = "user_name:zhaoliu\ntype:0\ntoken:" + token;
+	CPPUNIT_ASSERT( center->process( "refresh", msg, ret ) == SUCCESS );
+	CPPUNIT_ASSERT( ret == "balance:0" );
 
  	CPPUNIT_ASSERT( center->remove_processer( "register" ) );
 

@@ -1,5 +1,5 @@
 #pragma once
-#include <string>
+#include "datas.h"
 class codec;
 
 class processer
@@ -126,4 +126,31 @@ public:
 	}
 protected:
 	virtual int main_process( void* data, std::string& ret_msg );
+	bool cost_shares( const std::string& name, const std::string& friend_name, shared_info& shared );
+	bool cancel_trade( std::map<std::string, shared_info*>& already );
 };
+
+//好友管理
+class friends_processer: public processer
+{
+public:
+	friends_processer( codec* c )
+		:processer( c )
+	{
+	}
+protected:
+	virtual int main_process( void* data, std::string& ret_msg );
+};
+
+//分享管理
+class shared_processer: public processer
+{
+public:
+	shared_processer( codec* c )
+		:processer( c )
+	{
+	}
+protected:
+	virtual int main_process( void* data, std::string& ret_msg );
+};
+

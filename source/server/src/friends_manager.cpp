@@ -8,9 +8,9 @@ friends_manager::~friends_manager(void)
 {
 }
 
-bool friends_manager::add_friend( const std::string& name, const std::string& group )
+bool friends_manager::add_friend( const friend_info& info )
 {
-	return m_friend_map.insert( make_pair(name, friend_info(name, group)) ).second;
+	return m_friend_map.insert( make_pair( info.name, info ) ).second;
 }
 
 bool friends_manager::del_friend( const std::string& name )
@@ -44,7 +44,11 @@ bool friends_manager::get_friends( const std::string& group, std::list<friend_in
 	friends_map::iterator it = m_friend_map.begin();
 	for ( ; it != m_friend_map.end(); it++ )
 	{
-		if ( it->second.group == group )
+		if ( group == "" ) //取所有好友
+		{
+			friends.push_back( it->second );
+		}
+		else if ( it->second.group == group )
 		{
 			friends.push_back( it->second );
 		}
@@ -55,7 +59,7 @@ bool friends_manager::get_friends( const std::string& group, std::list<friend_in
 std::string friends_manager::get_group( const std::string& name )
 {
 	friends_map::iterator it = m_friend_map.find(name);
-	if ( it == m_friend_map.begin() )
+	if ( it == m_friend_map.end() )
 	{
 		return "";
 	}

@@ -1,6 +1,5 @@
 #pragma once
-#include <string>
-
+#include "datas.h"
 class codec
 {
 public:
@@ -8,6 +7,7 @@ public:
 
 	virtual void* decode( const std::string& message ) = 0;
 	virtual std::string encode( void* data ) = 0;
+	virtual void release_buffer( void* buf ) = 0;
 };
 
 class key_value_codec : public codec
@@ -42,6 +42,8 @@ protected:
 	virtual bool fill_buffer( void* buf, const std::string& key, const std::string& val );
 	virtual void* get_buffer();
 	virtual void release_buffer( void* buf );
+
+	void decode_shared_list( const std::string& msg, std::map<std::string, shared_info>& shared );
 };
 
 class cashback_confirm_request_codec : public key_value_codec
@@ -55,6 +57,26 @@ protected:
 };
 
 class get_requesting_trade_codec : public key_value_codec
+{
+public:
+	virtual std::string encode( void* data );
+protected:
+	virtual bool fill_buffer( void* buf, const std::string& key, const std::string& val );
+	virtual void* get_buffer();
+	virtual void release_buffer( void* buf );
+};
+
+class friend_manager_codec : public key_value_codec
+{
+public:
+	virtual std::string encode( void* data );
+protected:
+	virtual bool fill_buffer( void* buf, const std::string& key, const std::string& val );
+	virtual void* get_buffer();
+	virtual void release_buffer( void* buf );
+};
+
+class shared_manager_codec : public key_value_codec
 {
 public:
 	virtual std::string encode( void* data );
