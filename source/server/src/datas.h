@@ -4,7 +4,7 @@
 #include <list>
 #include <map>
 
-#define date double
+#define mydate double
 
 static const std::string SEPARATOR_1 = ":";
 static const std::string SEPARATOR_2 = ";";
@@ -70,7 +70,7 @@ typedef struct base_info_t
 
 typedef struct shared_info_t
 {
-	shared_info_t( const std::string& m, const std::string& g, float a, date e )
+	shared_info_t( const std::string& m, const std::string& g, float a, mydate e )
 		:merchant( m ), group( g ), amount( a ), expiration( e )
 	{
 	}
@@ -96,7 +96,7 @@ typedef struct shared_info_t
 	std::string merchant;
 	std::string group;
 	float       amount;
-	date        expiration;
+	mydate        expiration;
 }shared_info;
 
 

@@ -170,7 +170,7 @@ void process_center_test::test_process()
 	CPPUNIT_ASSERT( center->process( "shared_manager", msg, ret ) == SUCCESS );
 	
 	msg = "user_name:zhouyi\ntype:0\ntoken:" + zhouyi_token;
-	msg += "\nmerchant:wangwu\ncash:1.00\nclerk:xiaoming\ntradetype:1\n";
+	msg += "\nmerchant:wangwu\ncash:0.00\nclerk:xiaoming\ntradetype:1\n";
 	msg += ret;
 	CPPUNIT_ASSERT( center->process( "cost_cashback", msg, ret ) == SUCCESS );
 	
@@ -184,7 +184,7 @@ void process_center_test::test_process()
 
 	msg = "user_name:zhaoliu\ntype:0\ntoken:" + token;
 	CPPUNIT_ASSERT( center->process( "refresh", msg, ret ) == SUCCESS );
-	CPPUNIT_ASSERT( ret == "balance:0" );
+	CPPUNIT_ASSERT( ret == "balance:1" );
 
  	CPPUNIT_ASSERT( center->remove_processer( "register" ) );
 

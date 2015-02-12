@@ -18,6 +18,7 @@ public:
 	
 	//返回旧的persistance,不存在返回0
 	persistance* set_persistance( persistance* p );
+
 	int regist( user_info* info );
 	int login( user_info* info );
 	int logout( user_info* info );

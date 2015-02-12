@@ -7,7 +7,7 @@ CPPUNIT_TEST_SUITE_REGISTRATION( user_manager_test );
 
 user_manager_test::user_manager_test(void)
 {
-	persistance* p = new db();
+	persistance* p = new db( "127.0.0.1", "root", "3721", "cashback", 3306 );//new memory_persistance();
 	user_manager::get_instance()->set_persistance( p );
 }
 
