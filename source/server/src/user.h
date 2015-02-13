@@ -29,7 +29,7 @@ public:
 	virtual void login() = 0;
 	virtual bool logout() = 0;
 
-	friends_manager* get_friends_manager() const
+	friend_manager* get_friends_manager() const
 	{
 		return m_friends_manager;
 	}
@@ -40,7 +40,7 @@ public:
 	}
 
 protected:
-	friends_manager*               m_friends_manager; //好友管理
+	friend_manager*               m_friends_manager; //好友管理
 	share_manager*                 m_share_manager;   //分享信息管理
 	account*                       m_account;         //账号
 	user_info                      m_user_info;       //用户基本信息

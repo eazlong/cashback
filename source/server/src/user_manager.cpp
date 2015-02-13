@@ -6,18 +6,18 @@
 #include <algorithm>
 #include <assert.h>
 
-user_manager* user_manager::m_instance = new user_manager;
+online_user_manager* online_user_manager::m_instance = new online_user_manager;
 
-user_manager::user_manager(void)
+online_user_manager::online_user_manager(void)
 :m_persistance( NULL )
 {
 }
 
-user_manager::~user_manager(void)
+online_user_manager::~online_user_manager(void)
 {
 }
 
-int user_manager::regist( user_info* info )
+int online_user_manager::regist( user_info* info )
 {
 	if ( info == NULL )
 		return INVALID_PRAMETER;
@@ -35,13 +35,11 @@ int user_manager::regist( user_info* info )
 		error_log( "user:" << info->name << " persist failed!" );
 		return PERSIST_FAILED;
 	}
-	
-	insert_user( info );
 
-	return SUCCESS;
+	return login( info );
 }
 
-bool user_manager::insert_user( user_info* info )
+bool online_user_manager::insert_user( user_info* info )
 {
 	user* usr;
 	switch( info->type )
@@ -57,7 +55,7 @@ bool user_manager::insert_user( user_info* info )
 	return m_user_map.insert( make_pair( make_pair(info->name, info->type), usr ) ).second;
 }
 
-int user_manager::login( user_info* info )
+int online_user_manager::login( user_info* info )
 {
 	if ( NULL == info )
 	{
@@ -66,11 +64,12 @@ int user_manager::login( user_info* info )
 
 	assert( m_persistance != NULL );
 
-	int retcode = m_persistance->get_user_info( info ); //验证用户是否合法
+	int retcode = m_persistance->get_user_info( info, true ); //验证用户是否合法
 	if ( SUCCESS != retcode )
 	{
 		return retcode;
 	}
+
 	
 	std::map<key, user*>::iterator it = m_user_map.find( make_pair( info->name, info->type ) );
 	if ( it != m_user_map.end() ) //已经登录
@@ -86,7 +85,7 @@ int user_manager::login( user_info* info )
 	return SUCCESS;
 }
 
-int user_manager::logout( user_info* info )
+int online_user_manager::logout( user_info* info )
 {
 	if ( info == NULL || ( info->type != CUSTOMER && info->type != MERCHANT ) )
 	{
@@ -112,16 +111,14 @@ int user_manager::logout( user_info* info )
 	return USER_NOT_FOUND;
 }
 
-persistance* user_manager::set_persistance( persistance* p )
+persistance* online_user_manager::set_persistance( persistance* p )
 {
-	//assert( p != NULL );
-
 	persistance* temp = m_persistance;
 	m_persistance = p;
 	return temp;
 }
 
-user* user_manager::get_user( const std::string& name, user_type type ) const
+user* online_user_manager::get_user( const std::string& name, user_type type ) const
 {
 	if ( name.empty() || ( type != CUSTOMER && type != MERCHANT ) )
 	{
@@ -137,7 +134,7 @@ user* user_manager::get_user( const std::string& name, user_type type ) const
 	return NULL;
 }
 
-int user_manager::verify( const base_info& base, user** usr /*= NULL */ )
+int online_user_manager::verify( const base_info& base, user** usr /*= NULL */ )
 {
 	user* u = get_user( base.name, base.type );
 	if ( u == NULL )
@@ -154,5 +151,6 @@ int user_manager::verify( const base_info& base, user** usr /*= NULL */ )
 	{
 		*usr = u;
 	}
+
 	return SUCCESS;
 }

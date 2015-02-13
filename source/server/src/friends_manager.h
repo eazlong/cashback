@@ -5,11 +5,11 @@
 #include <list>
 #include "datas.h"
 
-class friends_manager
+class friend_manager
 {
 public:
-	friends_manager(void);
-	virtual ~friends_manager(void);
+	friend_manager( int id );
+	virtual ~friend_manager(void);
 
 	//∫√”—π‹¿Ì
 	virtual bool add_friend( const friend_info& info );
@@ -22,4 +22,6 @@ public:
 protected:
 	typedef std::map< std::string, friend_info > friends_map; //friend user name
 	friends_map                    m_friend_map;
+	int                            m_userid;
+	db*                            m_persistance;
 };

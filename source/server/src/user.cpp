@@ -6,10 +6,10 @@
 user::user( user_info* info, account* accnt )
 :m_user_info( (*info) ),
  m_account(new base_account), 
- m_friends_manager( new friends_manager ), 
+ m_friends_manager( new friend_manager(info->id) ), 
  m_share_manager( new share_manager )
 {
-	m_user_info.token = 10000;
+	m_user_info.token = 12345;
 }
 
 user::~user(void)

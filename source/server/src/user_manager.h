@@ -6,12 +6,12 @@
 class user;
 class persistance;
 
-class user_manager
+class online_user_manager
 {
 public:
-	virtual ~user_manager(void);
+	virtual ~online_user_manager(void);
 
-	static user_manager* get_instance()
+	static online_user_manager* get_instance()
 	{
 		return m_instance;
 	}
@@ -27,13 +27,13 @@ public:
 	user* get_user( const std::string& name, user_type type ) const;
 
 protected:
-	user_manager(void);
-	user_manager( const user_manager& other );
+	online_user_manager(void);
+	online_user_manager( const online_user_manager& other );
 
 	bool insert_user( user_info* info );
 
 private:
-	static user_manager* m_instance;
+	static online_user_manager* m_instance;
 
 	persistance* m_persistance;
 	typedef std::pair<std::string, user_type> key;

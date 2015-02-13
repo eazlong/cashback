@@ -52,6 +52,7 @@ typedef struct user_info_t
 		token    = other.token;
 	}
 
+	int         id;
 	std::string name;
 	std::string password;
 	std::string address;

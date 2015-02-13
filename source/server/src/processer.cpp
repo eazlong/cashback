@@ -39,10 +39,10 @@ int regist_processer::main_process( void* data, std::string& ret_msg )
 	}
 
 	user_info* info = (user_info*)data;
-	int ret = user_manager::get_instance()->regist( info );
+	int ret = online_user_manager::get_instance()->regist( info );
 	if ( SUCCESS == ret )
 	{
-		user* usr = user_manager::get_instance()->get_user( info->name, info->type );
+		user* usr = online_user_manager::get_instance()->get_user( info->name, info->type );
 		assert( usr != NULL );
 		ret_msg = m_codec->encode( usr );
 		return SUCCESS;
@@ -59,10 +59,10 @@ int login_processer::main_process( void* data, std::string& ret_msg )
 	}
 
 	user_info* info = (user_info*)data;
-	int ret = user_manager::get_instance()->login( info );
+	int ret = online_user_manager::get_instance()->login( info );
 	if ( SUCCESS == ret )
 	{
-		user* usr = user_manager::get_instance()->get_user( info->name, info->type );
+		user* usr = online_user_manager::get_instance()->get_user( info->name, info->type );
 		assert( usr != NULL );
 		ret_msg = m_codec->encode( usr );
 		return SUCCESS;
@@ -78,7 +78,7 @@ int logout_processer::main_process( void* data, std::string& ret_msg )
 		return INVALID_PRAMETER;
 	}
 	user_info* info = (user_info*)data;
-	return user_manager::get_instance()->logout( info );
+	return online_user_manager::get_instance()->logout( info );
 }
 
 
@@ -91,7 +91,7 @@ int generate_request_processer::main_process( void* data, std::string& ret_msg )
 
 	cashback_request* request = (cashback_request*)data;
 	user* usr;
-	int ret = user_manager::get_instance()->verify( request->base, &usr );
+	int ret = online_user_manager::get_instance()->verify( request->base, &usr );
 	if ( SUCCESS != ret )
 	{
 		return ret;
@@ -125,7 +125,7 @@ int generate_request_processer::main_process( void* data, std::string& ret_msg )
 		break;
 	case CUSTOMER://用户请求生成优惠券
 		{
-			user *u = user_manager::get_instance()->get_user( request->merchant_name, MERCHANT );
+			user *u = online_user_manager::get_instance()->get_user( request->merchant_name, MERCHANT );
 			if ( u == NULL )
 			{
 				return USER_NOT_FOUND;
@@ -154,14 +154,14 @@ int cashback_customer_confirm_processer::main_process( void* data, std::string& 
 
 	cashback_confirm_request* request = (cashback_confirm_request*)data;
 	user* usr;
-	int ret = user_manager::get_instance()->verify( request->base, &usr );
+	int ret = online_user_manager::get_instance()->verify( request->base, &usr );
 	if ( SUCCESS != ret )
 	{
 		return ret;
 	}
 
 	//商户认证
-	user * u = user_manager::get_instance()->get_user( request->merchant_name, MERCHANT );
+	user * u = online_user_manager::get_instance()->get_user( request->merchant_name, MERCHANT );
 	if ( u == NULL )
 	{
 		return USER_NOT_FOUND;
@@ -202,14 +202,14 @@ int cashback_merchant_confirm_processer::main_process( void* data, std::string& 
 	//商户认证
 	cashback_confirm_request* request = (cashback_confirm_request*)data;
 	user* usr;
-	int ret = user_manager::get_instance()->verify( request->base, &usr );
+	int ret = online_user_manager::get_instance()->verify( request->base, &usr );
 	if ( SUCCESS != ret )
 	{
 		return ret;
 	}
 
 	//用户认证
-	user * u = user_manager::get_instance()->get_user( request->customer_name, CUSTOMER );
+	user * u = online_user_manager::get_instance()->get_user( request->customer_name, CUSTOMER );
 	if ( u == NULL )
 	{
 		return USER_NOT_FOUND;
@@ -239,7 +239,7 @@ int get_reqesting_trade_processer::main_process( void* data, std::string& ret_ms
 
 	get_reqeusting_trade_request* request = (get_reqeusting_trade_request*)data;
 	user* usr;
-	int ret = user_manager::get_instance()->verify( request->base, &usr );
+	int ret = online_user_manager::get_instance()->verify( request->base, &usr );
 	if ( SUCCESS != ret )
 	{
 		return ret;
@@ -266,7 +266,7 @@ int refresh_processer::main_process( void* data, std::string& ret_msg )
 
 	cashback_confirm_request* request = (cashback_confirm_request*)data;
 	user* usr;
-	int ret = user_manager::get_instance()->verify( request->base, &usr );
+	int ret = online_user_manager::get_instance()->verify( request->base, &usr );
 	if ( SUCCESS != ret )
 	{
 		return ret;
@@ -290,7 +290,7 @@ int cost_cashback_processer::main_process( void* data, std::string& ret_msg )
 
 	cashback_request* request = (cashback_request*)data;
 	user* usr;
-	int ret = user_manager::get_instance()->verify( request->base, &usr );
+	int ret = online_user_manager::get_instance()->verify( request->base, &usr );
 	if ( SUCCESS != ret )
 	{
 		return ret;
@@ -304,7 +304,7 @@ int cost_cashback_processer::main_process( void* data, std::string& ret_msg )
 	}
 
 	//商户认证
-	user * u = user_manager::get_instance()->get_user( request->merchant_name, MERCHANT );
+	user * u = online_user_manager::get_instance()->get_user( request->merchant_name, MERCHANT );
 	if ( u == NULL )
 	{
 		return USER_NOT_FOUND;
@@ -350,9 +350,12 @@ bool cost_cashback_processer::cancel_trade( std::map<std::string, shared_info*>&
 	for ( std::map<std::string, shared_info*>::iterator it_already = already.begin();
 		it_already != already.end(); it_already ++ )
 	{
-		user* f = user_manager::get_instance()->get_user( it_already->first, CUSTOMER );
+		user* f = online_user_manager::get_instance()->get_user( it_already->first, CUSTOMER );
 		if ( f == NULL )
+		{
 			return false;
+		}
+
 		f->get_shared_manager()->add_shared_cash(it_already->second->group, it_already->second->merchant, it_already->second->amount );
 	}
 	return true;
@@ -360,7 +363,7 @@ bool cost_cashback_processer::cancel_trade( std::map<std::string, shared_info*>&
 
 bool cost_cashback_processer::cost_shares( const std::string& name, const std::string& friend_name, shared_info& shares )
 {
-	user* f = user_manager::get_instance()->get_user( friend_name, CUSTOMER );
+	user* f = online_user_manager::get_instance()->get_user( friend_name, CUSTOMER );
 	if ( f == NULL )
 		return false;
 	std::string group = f->get_friends_manager()->get_group( name );
@@ -389,7 +392,7 @@ int friends_processer::main_process( void* data, std::string& ret_msg )
 
 	friend_manager_request* request = (friend_manager_request*)data;
 	user* usr;
-	int ret = user_manager::get_instance()->verify( request->base, &usr );
+	int ret = online_user_manager::get_instance()->verify( request->base, &usr );
 	if ( SUCCESS != ret )
 	{
 		return ret;
@@ -436,7 +439,7 @@ int shared_processer::main_process( void* data, std::string& ret_msg )
 
 	shared_manager_request* request = (shared_manager_request*)data;
 	user* usr;
-	int ret = user_manager::get_instance()->verify( request->base, &usr );
+	int ret = online_user_manager::get_instance()->verify( request->base, &usr );
 	if ( SUCCESS != ret )
 	{
 		return ret;
@@ -484,7 +487,7 @@ int shared_processer::main_process( void* data, std::string& ret_msg )
 					it != friends.end(); it ++ )
 				{
 					std::list<shared_info> shares;
-					user* f = user_manager::get_instance()->get_user( it->name, CUSTOMER );
+					user* f = online_user_manager::get_instance()->get_user( it->name, CUSTOMER );
 					if ( f == NULL )
 					{
 						continue;
